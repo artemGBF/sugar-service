@@ -3,7 +3,7 @@ package ru.gbf.sugar.sugar.entity;
 import lombok.*;
 import org.springframework.data.relational.core.mapping.Table;
 
-@Table(value = "sugars")
+@Table("sugars")
 @AllArgsConstructor
 @NoArgsConstructor
 @Setter
@@ -15,7 +15,8 @@ public class Sugar {
     private Long id;
     private String name;
     private String color;
-    private String url;
+    private String url1;
+    private String url2;
     private Boolean synchronizationFlag;
     private String description;
 }
