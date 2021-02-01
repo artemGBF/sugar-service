@@ -1,0 +1,5 @@
+databaseChangeLog:
+#  - logicalFilePath: /home/gg/IdeaProjects/sugar-service/src/main/resources/db.changelog/sugar/changelogSugar.yaml
+  - include:
+      relativeToChangelogFile: true
+      file: create_sugar.sql
