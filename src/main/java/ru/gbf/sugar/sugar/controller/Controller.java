@@ -12,18 +12,28 @@ import java.util.List;
 public class Controller {
 
     @GetMapping("/getall")
-    public List<Sugar> getAll(){return null;}
+    public List<Sugar> getAll() {
+        return null;
+    }
 
     @GetMapping("/getbyid/{id}")
-    public Sugar getbyid(Long id){return null;}
+    public Sugar getbyid(Long id) {
+        return null;
+    }
 
     @GetMapping("/getbyparam/{param}")
-    public List<Sugar> getbyparam(@PathVariable Object param){return null;}
+    public List<Sugar> getbyparam(@PathVariable Object param) {
+        return null;
+    }
 
     @PostMapping("/add")
-    public Sugar add(HttpServletRequest request, HttpServletResponse response){return null;}
+    public Sugar add(HttpServletRequest request, HttpServletResponse response) {
+        return null;
+    }
 
     @DeleteMapping("/deletebyparam/{param}")
-    public Sugar deletebyparam(@PathVariable Object param){return null;}
+    public Sugar deletebyparam(@PathVariable Object param) {
+        return null;
+    }
 
 }

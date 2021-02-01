@@ -11,7 +11,6 @@ import org.springframework.data.relational.core.mapping.Table;
 @ToString
 @EqualsAndHashCode
 public class Sugar {
-
     private Long id;
     private String name;
     private String color;
