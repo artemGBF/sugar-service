@@ -1,15 +1,5 @@
 package ru.gbf.sugar.sugar.controller;
 
-import com.fasterxml.jackson.databind.util.JSONPObject;
-import org.apache.http.HttpEntity;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import ru.gbf.sugar.sugar.entity.Sugar;
@@ -28,13 +18,20 @@ public class Controller {
     @Autowired
     private SugarServise sugarServise;
 
-    @GetMapping("/getall")
+    @GetMapping("/createFolder")
+    public Sugar createFolder(@RequestParam String name) throws IOException {
+        sugarServise.createFolder(name);
+        System.out.println();
+        return null;
+    }
+
+    @GetMapping("/getAllNameFile")
     public String getAll() throws IOException {
-        String all = sugarServise.getAll();
+        String all = sugarServise.getAllNameFile();
         return all;
     }
 
-    @GetMapping("/getauth")
+    @GetMapping("/getAuth")
     public String getAuth(@RequestParam String code) throws IOException   {
         String auth = sugarServise.getAuth(code);
         return auth;
@@ -46,13 +43,15 @@ public class Controller {
         return null;
     }
 
-    @GetMapping("/getbyparam/{param}")
-    public List<Sugar> getbyparam(@PathVariable Object param) {
+    @GetMapping("/getFile")
+    public List<Sugar> getbyparam() throws IOException {
+        sugarServise.getFile();
         return null;
     }
 
     @PostMapping("/add")
-    public Sugar add(HttpServletRequest request, HttpServletResponse response) {
+    public Sugar add( HttpServletRequest request,@RequestParam("fileName") String fileName) throws IOException {
+        sugarServise.addFile(request,fileName);
         return null;
     }
 
