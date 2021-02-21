@@ -1,9 +1,6 @@
 package ru.gbf.sugar.sugar.servise;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -11,33 +8,26 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.entity.HttpEntityWrapper;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 import org.springframework.stereotype.Service;
-import ru.gbf.sugar.sugar.dto.AddFile;
+import ru.gbf.sugar.sugar.dto.AddGetFile;
 import ru.gbf.sugar.sugar.dto.Token;
-import ru.gbf.sugar.sugar.dto.UrlDto;
-
-import javax.servlet.ServletContext;
+import javax.imageio.ImageIO;
 import javax.servlet.ServletInputStream;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
+import java.awt.image.BufferedImage;
+import java.io.*;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+
 @Service
-public class SugarServise {
+public class SugarServise implements Serializable {
 
     private Token token;
 
@@ -72,8 +62,8 @@ public class SugarServise {
         return result;
     }
 
-    public String addFile(HttpServletRequest request, String fileName) throws IOException {
-        String url = "https://cloud-api.yandex.net/v1/disk/resources/upload?path=sugarBase1/"+fileName;
+    public void addFile(HttpServletRequest request, String fileName) throws IOException {
+        String url = "https://cloud-api.yandex.net/v1/disk/resources/upload?path=sugarBase1/" + fileName;
         CloseableHttpClient client = HttpClients.createDefault();
         HttpGet httpGet = new HttpGet(url);
         httpGet.setHeader("Content-type", "application/json");
@@ -81,37 +71,33 @@ public class SugarServise {
         CloseableHttpResponse response = client.execute(httpGet);
         String s = EntityUtils.toString(response.getEntity());
         ObjectMapper objectMapper = new ObjectMapper();
- //       objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        AddFile addFile =objectMapper.readValue(s, AddFile.class);
+        AddGetFile addFile = objectMapper.readValue(s, AddGetFile.class);
         ServletInputStream inputStream = request.getInputStream();
         byte[] bytes = inputStream.readAllBytes();
         CloseableHttpClient client1 = HttpClients.createDefault();
         HttpPut httpPut = new HttpPut(addFile.getHref());
         httpPut.setEntity(new ByteArrayEntity(bytes));
-        httpGet.setHeader("Content-type", "application/json");
-//        httpGet.setHeader("Authorization", "OAuth AgAAAABQSs54AAbbEDrOVKJqbkL2vV5Ji4xJRCA");
+        httpPut.setHeader("Content-type", "application/json");
         CloseableHttpResponse response1 = client.execute(httpPut);
-        System.out.println();
-        return null;
     }
 
-    public void getFile() throws IOException {
-        String url1 = "/sugarBase/1-1.jpg";
+    public void getFile(String fileName) throws IOException {
+        String url1 = "/sugarBase1/17-1.jpg";
         String url = "https://cloud-api.yandex.net/v1/disk/resources/download?path=" + URLEncoder.encode(url1, StandardCharsets.UTF_8);
         CloseableHttpClient client = HttpClients.createDefault();
         HttpGet httpGet = new HttpGet(url);
         httpGet.setHeader("Content-type", "application/json");
-        httpGet.setHeader("Accept", "application/json");
         httpGet.setHeader("Authorization", "OAuth AgAAAABQSs54AAbbEDrOVKJqbkL2vV5Ji4xJRCA");
         CloseableHttpResponse response = client.execute(httpGet);
-        String result = EntityUtils.toString(response.getEntity());
-        UrlDto urlDto = new ObjectMapper().readValue(result, UrlDto.class);
+        AddGetFile addGetFile = new ObjectMapper().readValue(EntityUtils.toString(response.getEntity()), AddGetFile.class);
         CloseableHttpClient client1 = HttpClients.createDefault();
-        HttpGet httpGet1 = new HttpGet(urlDto.getHref());
+        HttpGet httpGet1 = new HttpGet(addGetFile.getHref());
         httpGet.setHeader("Content-type", "application/json");
         httpGet.setHeader("Authorization", "OAuth AgAAAABQSs54AAbbEDrOVKJqbkL2vV5Ji4xJRCA");
-        CloseableHttpResponse response1 = client.execute(httpGet);
-        HttpEntity entity = response1.getEntity();
+        CloseableHttpResponse response1 = client1.execute(httpGet1);
+        byte[] bytes = response1.getEntity().getContent().readAllBytes();
+        BufferedImage imag = ImageIO.read(new ByteArrayInputStream(bytes));
+        boolean jpg = ImageIO.write(imag, "jpg", new File("/home/gg/Изображения", "snap.jpg"));
     }
 
     public void createFolder(String name) throws IOException {
