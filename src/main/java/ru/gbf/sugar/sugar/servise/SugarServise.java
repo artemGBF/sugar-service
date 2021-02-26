@@ -1,6 +1,7 @@
 package ru.gbf.sugar.sugar.servise;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jayway.jsonpath.JsonPath;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -12,8 +13,13 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+import org.apache.tomcat.util.json.JSONParser;
+import org.apache.tomcat.util.json.ParseException;
+import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 import ru.gbf.sugar.sugar.dto.AddGetFile;
+import ru.gbf.sugar.sugar.dto.FileNameDto;
 import ru.gbf.sugar.sugar.dto.Token;
 import javax.imageio.ImageIO;
 import javax.servlet.ServletInputStream;
@@ -29,11 +35,12 @@ import java.util.List;
 @Service
 public class SugarServise implements Serializable {
 
-    private Token token;
+    private final String client_id = "7bc765b99fe348deb8ca78b2bdf9030b";
+    private final String client_secret = "8e4b80631eda41ac9165ad8ba11b4afc";
+    private String authToken;
+    private String refreshToken;
 
-    public String getAuth(String code) throws IOException {
-        String client_id = "7bc765b99fe348deb8ca78b2bdf9030b";
-        String client_secret = "8e4b80631eda41ac9165ad8ba11b4afc";
+    public String getAuth(@NotNull String code) throws IOException {
         String url = "https://oauth.yandex.ru/token";
         CloseableHttpClient client = HttpClients.createDefault();
         HttpPost httpPost = new HttpPost(url);
@@ -48,22 +55,22 @@ public class SugarServise implements Serializable {
         CloseableHttpResponse response = client.execute(httpPost);
         String result = EntityUtils.toString(response.getEntity());
         Token token = new ObjectMapper().readValue(result, Token.class);
+        authToken=token.getAccess_token();
         return result;
     }
 
     public String getAllNameFile() throws IOException {
-        String url = "https://cloud-api.yandex.net/v1/disk/resources?path=/sugarBase/&fields=_embedded.items.name";
+        String url = "https://cloud-api.yandex.net/v1/disk/resources?path=/sugarBase1/&fields=_embedded.items.name";
         CloseableHttpClient client = HttpClients.createDefault();
         HttpGet httpGet = new HttpGet(url);
         httpGet.setHeader("Content-type", "application/json");
         httpGet.setHeader("Authorization", "OAuth AgAAAABQSs54AAbbEDrOVKJqbkL2vV5Ji4xJRCA");
         CloseableHttpResponse response = client.execute(httpGet);
-        String result = EntityUtils.toString(response.getEntity());
-        return result;
+        return EntityUtils.toString(response.getEntity()) ;
     }
 
-    public void addFile(HttpServletRequest request, String fileName) throws IOException {
-        String url = "https://cloud-api.yandex.net/v1/disk/resources/upload?path=sugarBase1/" + fileName;
+    public void addFile(HttpServletRequest request, @NotNull String fileName) throws IOException {
+        String url = "https://cloud-api.yandex.net/v1/disk/resources/upload?path=/sugarBase1/"+fileName;
         CloseableHttpClient client = HttpClients.createDefault();
         HttpGet httpGet = new HttpGet(url);
         httpGet.setHeader("Content-type", "application/json");
@@ -81,8 +88,8 @@ public class SugarServise implements Serializable {
         CloseableHttpResponse response1 = client.execute(httpPut);
     }
 
-    public void getFile(String fileName) throws IOException {
-        String url1 = "/sugarBase1/17-1.jpg";
+    public void getFile(@NotNull String fileName) throws IOException {
+        String url1 = "/sugarBase1/"+fileName;
         String url = "https://cloud-api.yandex.net/v1/disk/resources/download?path=" + URLEncoder.encode(url1, StandardCharsets.UTF_8);
         CloseableHttpClient client = HttpClients.createDefault();
         HttpGet httpGet = new HttpGet(url);
@@ -97,18 +104,30 @@ public class SugarServise implements Serializable {
         CloseableHttpResponse response1 = client1.execute(httpGet1);
         byte[] bytes = response1.getEntity().getContent().readAllBytes();
         BufferedImage imag = ImageIO.read(new ByteArrayInputStream(bytes));
-        boolean jpg = ImageIO.write(imag, "jpg", new File("/home/gg/Изображения", "snap.jpg"));
+        boolean jpg = ImageIO.write(imag, "jpg", new File("/home/gg/Изображения", fileName));
     }
 
-    public void createFolder(String name) throws IOException {
-        String url = "https://cloud-api.yandex.net/v1/disk/resources?path=sugarBase1";
+    public void createFolder(@NotNull String folgerName) throws IOException {
+        String url = "https://cloud-api.yandex.net/v1/disk/resources?path="+folgerName;
         CloseableHttpClient client = HttpClients.createDefault();
         HttpGet httpGet = new HttpGet(url);
         httpGet.setHeader("Content-type", "application/json");
         httpGet.setHeader("Accept", "application/json");
         httpGet.setHeader("Authorization", "OAuth AgAAAABQSs54AAbbEDrOVKJqbkL2vV5Ji4xJRCA");
         CloseableHttpResponse response = client.execute(httpGet);
+    }
 
-        System.out.println();
+    public void searchSugar(String name) throws IOException, ParseException {
+        String url = "https://cloud-api.yandex.net/v1/disk/resources?path=/sugarBase1/&fields=_embedded.items.name";
+        CloseableHttpClient client = HttpClients.createDefault();
+        HttpGet httpGet = new HttpGet(url);
+        httpGet.setHeader("Content-type", "application/json");
+        httpGet.setHeader("Authorization", "OAuth AgAAAABQSs54AAbbEDrOVKJqbkL2vV5Ji4xJRCA");
+        CloseableHttpResponse response = client.execute(httpGet);
+        String s = EntityUtils.toString(response.getEntity());
+        ArrayList<String> list=JsonPath.parse(s).read("$._embedded.items[*].name");
+        if(list.contains(name)){
+            getFile(name);
+        }
     }
 }

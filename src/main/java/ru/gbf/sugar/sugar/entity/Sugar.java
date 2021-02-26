@@ -3,6 +3,8 @@ package ru.gbf.sugar.sugar.entity;
 import lombok.*;
 import org.springframework.data.relational.core.mapping.Table;
 
+import java.io.Serializable;
+
 @Table("sugars")
 @AllArgsConstructor
 @NoArgsConstructor
@@ -10,7 +12,7 @@ import org.springframework.data.relational.core.mapping.Table;
 @Getter
 @ToString
 @EqualsAndHashCode
-public class Sugar {
+public class Sugar implements Serializable {
     private Long id;
     private String name;
     private String color;
