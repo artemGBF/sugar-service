@@ -1,5 +1,6 @@
 package ru.gbf.sugar.sugar.controller;
 
+import org.apache.tomcat.util.json.ParseException;
 import com.fasterxml.jackson.databind.util.JSONPObject;
 import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
@@ -23,42 +24,47 @@ import ru.gbf.sugar.sugar.servise.SugarServise;
 
 @RestController
 @RequestMapping(value = "sugar")
-public class Controller {
+public class Controller implements Serializable {
 
     @Autowired
     private SugarServise sugarServise;
 
-    @GetMapping("/getall")
-    public String getAll() throws IOException {
-        String all = sugarServise.getAll();
-        return all;
-    }
-
-    @GetMapping("/getauth")
-    public String getAuth(@RequestParam String code) throws IOException   {
-        String auth = sugarServise.getAuth(code);
-        return auth;
+    @GetMapping("/createFolder")
+    public Sugar createFolder(@RequestParam String name) throws IOException {
+        sugarServise.createFolder(name);
+        return null;
     }
     
 
-    @GetMapping("/getbyid/{id}")
-    public Sugar getbyid(Long id) {
-        return null;
+    @GetMapping("/getAllNameFile")
+    public String getAll() throws IOException {
+        return sugarServise.getAllNameFile();
     }
 
-    @GetMapping("/getbyparam/{param}")
-    public List<Sugar> getbyparam(@PathVariable Object param) {
-        return null;
+    @GetMapping("/getAuth")
+    public String getAuth(@RequestParam String code) throws IOException {
+        return sugarServise.getAuth(code);
     }
 
-    @PostMapping("/add")
-    public Sugar add(HttpServletRequest request, HttpServletResponse response) {
-        return null;
+    @GetMapping("/getFile")
+    public void getFile(@RequestParam("fileName") String fileName) throws IOException {
+        sugarServise.getFile(fileName);
+    }
+
+    @PostMapping("/addFile")
+    public void add(HttpServletRequest request, @RequestParam("fileName") String fileName) throws IOException {
+        sugarServise.addFile(request,fileName);
     }
 
     @DeleteMapping("/deletebyparam/{param}")
     public Sugar deletebyparam(@PathVariable Object param) {
         return null;
+    }
+
+    @GetMapping("/search")
+    public void searchSugar(@RequestParam("name") String name) throws IOException, ParseException {
+        sugarServise.searchSugar(name);
+        System.out.println();
     }
 
 }
