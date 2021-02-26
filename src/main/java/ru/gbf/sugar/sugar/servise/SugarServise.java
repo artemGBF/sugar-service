@@ -2,6 +2,7 @@ package ru.gbf.sugar.sugar.servise;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
+import com.fasterxml.jackson.databind.util.JSONPObject;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -47,7 +48,7 @@ public class SugarServise implements Serializable {
         httpPost.setHeader("Content-type", "application/x-www-form-urlencoded");
         httpPost.setHeader("Accept", "application/json");
         List<NameValuePair> params = new ArrayList<>();
-        params.add(new BasicNameValuePair("grant_type", "authorization_code"));
+        params.add(new BasicNameValuePair("grant_type","authorization_code"));
         params.add(new BasicNameValuePair("code", code));
         params.add(new BasicNameValuePair("client_id", client_id));
         params.add(new BasicNameValuePair("client_secret", client_secret));
