@@ -30,8 +30,8 @@ public class Controller implements Serializable {
     private SugarServise sugarServise;
 
     @GetMapping("/createFolder")
-    public Sugar createFolder(@RequestParam String name) throws IOException {
-        sugarServise.createFolder(name);
+    public HttpEntity createFolder(@RequestParam String folgerName) throws IOException {
+        HttpEntity httpEntity = sugarServise.createFolder(folgerName);
         return null;
     }
     

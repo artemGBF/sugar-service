@@ -3,6 +3,7 @@ package ru.gbf.sugar.sugar.servise;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import com.fasterxml.jackson.databind.util.JSONPObject;
+import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -25,9 +26,11 @@ import ru.gbf.sugar.sugar.dto.Token;
 import javax.imageio.ImageIO;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.URLEncoder;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +46,7 @@ public class SugarServise implements Serializable {
 
     public String getAuth(@NotNull String code) throws IOException {
         String url = "https://oauth.yandex.ru/token";
+        System.out.println(url);
         CloseableHttpClient client = HttpClients.createDefault();
         HttpPost httpPost = new HttpPost(url);
         httpPost.setHeader("Content-type", "application/x-www-form-urlencoded");
@@ -108,14 +112,16 @@ public class SugarServise implements Serializable {
         boolean jpg = ImageIO.write(imag, "jpg", new File("/home/gg/Изображения", fileName));
     }
 
-    public void createFolder(@NotNull String folgerName) throws IOException {
-        String url = "https://cloud-api.yandex.net/v1/disk/resources?path="+folgerName;
+    public HttpEntity createFolder(String folgerName) throws IOException {
+        String url = "https://cloud-api.yandex.net/v1/disk/resources?path="+URLEncoder.encode(folgerName, StandardCharsets.UTF_8);
         CloseableHttpClient client = HttpClients.createDefault();
-        HttpGet httpGet = new HttpGet(url);
-        httpGet.setHeader("Content-type", "application/json");
-        httpGet.setHeader("Accept", "application/json");
-        httpGet.setHeader("Authorization", "OAuth AgAAAABQSs54AAbbEDrOVKJqbkL2vV5Ji4xJRCA");
-        CloseableHttpResponse response = client.execute(httpGet);
+        HttpPut httpPut = new HttpPut(url);
+        httpPut.setHeader("Content-type", "application/json");
+        httpPut.setHeader("Accept", "application/json");
+        httpPut.setHeader("Authorization", "OAuth AgAAAABQSs54AAbbEDrOVKJqbkL2vV5Ji4xJRCA");
+        CloseableHttpResponse response = client.execute(httpPut);
+        HttpEntity entity = response.getEntity();
+        return entity;
     }
 
     public void searchSugar(String name) throws IOException, ParseException {
