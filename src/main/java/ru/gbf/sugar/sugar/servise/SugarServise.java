@@ -81,6 +81,7 @@ public class SugarServise implements Serializable {
         httpGet.setHeader("Content-type", "application/json");
         httpGet.setHeader("Authorization", "OAuth AgAAAABQSs54AAbbEDrOVKJqbkL2vV5Ji4xJRCA");
         CloseableHttpResponse response = client.execute(httpGet);
+
         String s = EntityUtils.toString(response.getEntity());
         ObjectMapper objectMapper = new ObjectMapper();
         AddGetFile addFile = objectMapper.readValue(s, AddGetFile.class);

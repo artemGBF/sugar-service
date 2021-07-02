@@ -1,4 +1,4 @@
-create table sugars
+CREATE TABLE sugars
 (
     id                  serial PRIMARY KEY,
     name                text,
