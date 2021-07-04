@@ -20,10 +20,12 @@ import org.apache.tomcat.util.json.ParseException;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import ru.gbf.sugar.sugar.dto.AddGetFile;
 import ru.gbf.sugar.sugar.dto.FileNameDto;
 import ru.gbf.sugar.sugar.dto.Token;
 import javax.imageio.ImageIO;
+import javax.servlet.ServletException;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -74,19 +76,20 @@ public class SugarServise implements Serializable {
         return EntityUtils.toString(response.getEntity()) ;
     }
 
-    public void addFile(HttpServletRequest request, @NotNull String fileName) throws IOException {
-        String url = "https://cloud-api.yandex.net/v1/disk/resources/upload?path=/sugarBase1/"+fileName;
+    public void addFile(HttpServletRequest request, MultipartFile file) throws IOException, ServletException {
+        String url = "https://cloud-api.yandex.net/v1/disk/resources/upload?path=/sugarBase1/"+file.getOriginalFilename();
+
         CloseableHttpClient client = HttpClients.createDefault();
         HttpGet httpGet = new HttpGet(url);
         httpGet.setHeader("Content-type", "application/json");
         httpGet.setHeader("Authorization", "OAuth AgAAAABQSs54AAbbEDrOVKJqbkL2vV5Ji4xJRCA");
         CloseableHttpResponse response = client.execute(httpGet);
-
         String s = EntityUtils.toString(response.getEntity());
         ObjectMapper objectMapper = new ObjectMapper();
         AddGetFile addFile = objectMapper.readValue(s, AddGetFile.class);
         ServletInputStream inputStream = request.getInputStream();
-        byte[] bytes = inputStream.readAllBytes();
+/*        byte[] bytes = inputStream.readAllBytes();*/
+        byte[] bytes = file.getBytes();
         CloseableHttpClient client1 = HttpClients.createDefault();
         HttpPut httpPut = new HttpPut(addFile.getHref());
         httpPut.setEntity(new ByteArrayEntity(bytes));

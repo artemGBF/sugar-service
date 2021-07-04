@@ -7,9 +7,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import ru.gbf.sugar.sugar.entity.Sugar;
 
 import javax.servlet.Filter;
+import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.http.*;
 import java.io.*;
@@ -50,9 +52,8 @@ public class Controller implements Serializable {
     }
 
     @PostMapping("/addFile")
-    // @CrossOrigin(allowCredentials = "true", origins = "http://localhost:8080", methods = RequestMethod.POST, allowedHeaders = "Origin, X-Requested-With, Content-Type, Accept")
-    public void add(HttpServletRequest request, @RequestParam(value="fileName") String fileName) throws IOException {
-        sugarServise.addFile(request, fileName );
+    public void add(HttpServletRequest request, @RequestParam(value="file") MultipartFile file) throws IOException, ServletException {
+        sugarServise.addFile(request, file );
     }
 
     @DeleteMapping("/deletebyparam/{param}")
