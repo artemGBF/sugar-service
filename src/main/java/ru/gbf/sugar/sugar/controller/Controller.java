@@ -1,44 +1,44 @@
 package ru.gbf.sugar.sugar.controller;
 
+import org.apache.http.HttpResponse;
 import org.apache.tomcat.util.json.ParseException;
-import com.fasterxml.jackson.databind.util.JSONPObject;
 import org.apache.http.HttpEntity;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
+import org.json.JSONException;
+import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.gbf.sugar.sugar.entity.Sugar;
+import org.springframework.web.multipart.MultipartFile;
+import javax.servlet.ServletException;
 import javax.servlet.http.*;
 import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import ru.gbf.sugar.sugar.dto.PaginationDto;
 import ru.gbf.sugar.sugar.servise.SugarServise;
 
-
+@CrossOrigin(origins = "*", allowedHeaders = "*")
 @RestController
 @RequestMapping(value = "sugar")
+//@CrossOrigin(origins = "*")
 public class Controller implements Serializable {
 
     @Autowired
     private SugarServise sugarServise;
 
     @GetMapping("/createFolder")
-    public Sugar createFolder(@RequestParam String name) throws IOException {
-        sugarServise.createFolder(name);
+    public HttpEntity createFolder(@RequestParam String folgerName) throws IOException {
+        HttpEntity httpEntity = sugarServise.createFolder(folgerName);
         return null;
     }
-    
+
 
     @GetMapping("/getAllNameFile")
-    public String getAll() throws IOException {
-        return sugarServise.getAllNameFile();
+    public PaginationDto getAll(@RequestParam(value = "currentPage") String currentPage) throws IOException, org.json.simple.parser.ParseException, JSONException {
+        PaginationDto ob= sugarServise.getAllNameFile(currentPage);
+        return ob;
     }
 
     @GetMapping("/getAuth")
@@ -47,18 +47,24 @@ public class Controller implements Serializable {
     }
 
     @GetMapping("/getFile")
-    public void getFile(@RequestParam("fileName") String fileName) throws IOException {
-        sugarServise.getFile(fileName);
+    public void getFile(@RequestParam(value = "name") String name) throws IOException {
+        sugarServise.getFile(name);
     }
 
     @PostMapping("/addFile")
-    public void add(HttpServletRequest request, @RequestParam("fileName") String fileName) throws IOException {
-        sugarServise.addFile(request,fileName);
+    public void add(HttpServletRequest request,
+                    @RequestPart MultipartFile file,
+                    @RequestPart String form,
+                    @RequestPart String date,
+                    @RequestPart String color,
+                    @RequestPart String place,
+                    @RequestPart String name) throws IOException, ServletException {
+        sugarServise.addFile(request,form,date,color,place,name, file);
     }
 
-    @DeleteMapping("/deletebyparam/{param}")
-    public Sugar deletebyparam(@PathVariable Object param) {
-        return null;
+    @DeleteMapping ("/deleteByName/{param}")
+    public HttpResponse deleteByName(@PathVariable String param) throws IOException {
+      return   sugarServise.deleteFileByName(param);
     }
 
     @GetMapping("/search")
@@ -66,5 +72,9 @@ public class Controller implements Serializable {
         sugarServise.searchSugar(name);
         System.out.println();
     }
-
+    @GetMapping("/setPageSize")
+    public void setPageSize(@RequestParam("num") int num) throws IOException {
+        System.out.println(num);
+        sugarServise.setPageSize(num);
+    }
 }

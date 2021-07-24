@@ -2,36 +2,37 @@ package ru.gbf.sugar.sugar.servise;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
-import com.fasterxml.jackson.databind.util.JSONPObject;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.*;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
-import org.apache.tomcat.util.json.JSONParser;
 import org.apache.tomcat.util.json.ParseException;
 import org.jetbrains.annotations.NotNull;
-import org.json.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import ru.gbf.sugar.sugar.dto.AddGetFile;
-import ru.gbf.sugar.sugar.dto.FileNameDto;
+import ru.gbf.sugar.sugar.dto.PaginationDto;
 import ru.gbf.sugar.sugar.dto.Token;
 import javax.imageio.ImageIO;
-import javax.servlet.ServletInputStream;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-
+import java.util.*;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.*;
 
 @Service
 public class SugarServise implements Serializable {
@@ -40,15 +41,17 @@ public class SugarServise implements Serializable {
     private final String client_secret = "8e4b80631eda41ac9165ad8ba11b4afc";
     private String authToken;
     private String refreshToken;
+    private String pageSize="5";
 
     public String getAuth(@NotNull String code) throws IOException {
         String url = "https://oauth.yandex.ru/token";
+        System.out.println(url);
         CloseableHttpClient client = HttpClients.createDefault();
         HttpPost httpPost = new HttpPost(url);
         httpPost.setHeader("Content-type", "application/x-www-form-urlencoded");
         httpPost.setHeader("Accept", "application/json");
         List<NameValuePair> params = new ArrayList<>();
-        params.add(new BasicNameValuePair("grant_type","authorization_code"));
+        params.add(new BasicNameValuePair("grant_type", "authorization_code"));
         params.add(new BasicNameValuePair("code", code));
         params.add(new BasicNameValuePair("client_id", client_id));
         params.add(new BasicNameValuePair("client_secret", client_secret));
@@ -56,22 +59,47 @@ public class SugarServise implements Serializable {
         CloseableHttpResponse response = client.execute(httpPost);
         String result = EntityUtils.toString(response.getEntity());
         Token token = new ObjectMapper().readValue(result, Token.class);
-        authToken=token.getAccess_token();
+        authToken = token.getAccess_token();
         return result;
     }
 
-    public String getAllNameFile() throws IOException {
+    public PaginationDto getAllNameFile(String currentPage) throws IOException, org.json.simple.parser.ParseException, JSONException {
         String url = "https://cloud-api.yandex.net/v1/disk/resources?path=/sugarBase1/&fields=_embedded.items.name";
         CloseableHttpClient client = HttpClients.createDefault();
         HttpGet httpGet = new HttpGet(url);
         httpGet.setHeader("Content-type", "application/json");
         httpGet.setHeader("Authorization", "OAuth AgAAAABQSs54AAbbEDrOVKJqbkL2vV5Ji4xJRCA");
         CloseableHttpResponse response = client.execute(httpGet);
-        return EntityUtils.toString(response.getEntity()) ;
+        HttpEntity entity = response.getEntity();
+        InputStream entityContent = entity.getContent();
+        String s = EntityUtils.toString(response.getEntity());
+        Object obj = new JSONParser().parse(s);
+        JSONObject jo = (JSONObject) obj;
+        JSONObject embedded = (JSONObject) jo.get("_embedded");
+        JSONArray items = (JSONArray) embedded.get("items");
+        PaginationDto list=paginationArray(items, currentPage);
+        ResponseEntity<JSONObject> entity1=new ResponseEntity<JSONObject>(jo,HttpStatus.OK);
+        return list;
     }
 
-    public void addFile(HttpServletRequest request, @NotNull String fileName) throws IOException {
-        String url = "https://cloud-api.yandex.net/v1/disk/resources/upload?path=/sugarBase1/"+fileName;
+    private PaginationDto paginationArray(JSONArray jsonArray, String currentPage) throws JSONException {
+        ArrayList<String> list = new ArrayList<>();
+            int x=Integer.parseInt(this.pageSize)*(Integer.parseInt(currentPage)-1);
+            int y=x+Integer.parseInt(pageSize);
+        String total = String.valueOf(jsonArray.size());
+        while (x<y && x<=jsonArray.size()-1){
+            JSONObject jsonObject = (JSONObject) jsonArray.get(x);
+            String jo = (String) jsonObject.get("name");
+            list.add(jo);
+            x++;
+        }
+        PaginationDto paginationDto=new PaginationDto(Integer.parseInt(pageSize),Integer.parseInt(total),list);
+        return paginationDto;
+    }
+
+    public void addFile(HttpServletRequest request, String form, String date, String color, String place, String name, MultipartFile file) throws IOException, ServletException {
+        String stringName = color + "_" + form + "_" + place + "_" + name + "_" + date;
+        String url = "https://cloud-api.yandex.net/v1/disk/resources/upload?path=/sugarBase1/" + stringName;
         CloseableHttpClient client = HttpClients.createDefault();
         HttpGet httpGet = new HttpGet(url);
         httpGet.setHeader("Content-type", "application/json");
@@ -80,9 +108,7 @@ public class SugarServise implements Serializable {
         String s = EntityUtils.toString(response.getEntity());
         ObjectMapper objectMapper = new ObjectMapper();
         AddGetFile addFile = objectMapper.readValue(s, AddGetFile.class);
-        ServletInputStream inputStream = request.getInputStream();
-        byte[] bytes = inputStream.readAllBytes();
-        CloseableHttpClient client1 = HttpClients.createDefault();
+        byte[] bytes = file.getBytes();
         HttpPut httpPut = new HttpPut(addFile.getHref());
         httpPut.setEntity(new ByteArrayEntity(bytes));
         httpPut.setHeader("Content-type", "application/json");
@@ -90,7 +116,7 @@ public class SugarServise implements Serializable {
     }
 
     public void getFile(@NotNull String fileName) throws IOException {
-        String url1 = "/sugarBase1/"+fileName;
+        String url1 = "/sugarBase1/" + fileName;
         String url = "https://cloud-api.yandex.net/v1/disk/resources/download?path=" + URLEncoder.encode(url1, StandardCharsets.UTF_8);
         CloseableHttpClient client = HttpClients.createDefault();
         HttpGet httpGet = new HttpGet(url);
@@ -105,17 +131,19 @@ public class SugarServise implements Serializable {
         CloseableHttpResponse response1 = client1.execute(httpGet1);
         byte[] bytes = response1.getEntity().getContent().readAllBytes();
         BufferedImage imag = ImageIO.read(new ByteArrayInputStream(bytes));
-        boolean jpg = ImageIO.write(imag, "jpg", new File("/home/gg/Изображения", fileName));
+        boolean jpg = ImageIO.write(imag, "jpg", new File("/home/jj/Изображения", fileName));
     }
 
-    public void createFolder(@NotNull String folgerName) throws IOException {
-        String url = "https://cloud-api.yandex.net/v1/disk/resources?path="+folgerName;
+    public HttpEntity createFolder(String folgerName) throws IOException {
+        String url = "https://cloud-api.yandex.net/v1/disk/resources?path=" + URLEncoder.encode(folgerName, StandardCharsets.UTF_8);
         CloseableHttpClient client = HttpClients.createDefault();
-        HttpGet httpGet = new HttpGet(url);
-        httpGet.setHeader("Content-type", "application/json");
-        httpGet.setHeader("Accept", "application/json");
-        httpGet.setHeader("Authorization", "OAuth AgAAAABQSs54AAbbEDrOVKJqbkL2vV5Ji4xJRCA");
-        CloseableHttpResponse response = client.execute(httpGet);
+        HttpPut httpPut = new HttpPut(url);
+        httpPut.setHeader("Content-type", "application/json");
+        httpPut.setHeader("Accept", "application/json");
+        httpPut.setHeader("Authorization", "OAuth AgAAAABQSs54AAbbEDrOVKJqbkL2vV5Ji4xJRCA");
+        CloseableHttpResponse response = client.execute(httpPut);
+        HttpEntity entity = response.getEntity();
+        return entity;
     }
 
     public void searchSugar(String name) throws IOException, ParseException {
@@ -126,9 +154,25 @@ public class SugarServise implements Serializable {
         httpGet.setHeader("Authorization", "OAuth AgAAAABQSs54AAbbEDrOVKJqbkL2vV5Ji4xJRCA");
         CloseableHttpResponse response = client.execute(httpGet);
         String s = EntityUtils.toString(response.getEntity());
-        ArrayList<String> list=JsonPath.parse(s).read("$._embedded.items[*].name");
-        if(list.contains(name)){
+        ArrayList<String> list = JsonPath.parse(s).read("$._embedded.items[*].name");
+        if (list.contains(name)) {
             getFile(name);
         }
+    }
+
+    public HttpResponse deleteFileByName(String name) throws IOException {
+        String UrlDelete = "https://cloud-api.yandex.net/v1/disk/resources?path=/sugarBase1/" + name;
+        CloseableHttpClient client = HttpClients.createDefault();
+        HttpDelete httpDelete = new HttpDelete(UrlDelete);
+        httpDelete.setHeader("Content-type", "application/json");
+        httpDelete.setHeader("Authorization", "OAuth AgAAAABQSs54AAbbEDrOVKJqbkL2vV5Ji4xJRCA");
+        CloseableHttpResponse response = client.execute(httpDelete);
+        System.out.println(response);
+        return response;
+    }
+
+    public void setPageSize(int num) {
+        this.pageSize=String.valueOf(num);
+
     }
 }
