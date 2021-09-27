@@ -3,7 +3,6 @@ package ru.gbf.sugar.sugar.servise;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.*;
@@ -15,6 +14,7 @@ import org.apache.http.util.EntityUtils;
 import org.apache.tomcat.util.json.ParseException;
 import org.jetbrains.annotations.NotNull;
 import org.json.simple.parser.JSONParser;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -22,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 import ru.gbf.sugar.sugar.dto.AddGetFile;
 import ru.gbf.sugar.sugar.dto.PaginationDto;
 import ru.gbf.sugar.sugar.dto.Token;
+
 import javax.imageio.ImageIO;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -30,9 +31,11 @@ import java.io.*;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.*;
+import ru.gbf.sugar.sugar.repository.SugarRepository;
 
 @Service
 public class SugarServise implements Serializable {
@@ -41,11 +44,16 @@ public class SugarServise implements Serializable {
     private final String client_secret = "8e4b80631eda41ac9165ad8ba11b4afc";
     private String authToken;
     private String refreshToken;
-    private String pageSize="5";
+    private String pageSize = "10";
+
+    @Autowired
+    private SugarRepository sugarRepository;
+
+    @Autowired
+    SugarServiceDb sugarServiceDb;
 
     public String getAuth(@NotNull String code) throws IOException {
         String url = "https://oauth.yandex.ru/token";
-        System.out.println(url);
         CloseableHttpClient client = HttpClients.createDefault();
         HttpPost httpPost = new HttpPost(url);
         httpPost.setHeader("Content-type", "application/x-www-form-urlencoded");
@@ -77,28 +85,28 @@ public class SugarServise implements Serializable {
         JSONObject jo = (JSONObject) obj;
         JSONObject embedded = (JSONObject) jo.get("_embedded");
         JSONArray items = (JSONArray) embedded.get("items");
-        PaginationDto list=paginationArray(items, currentPage);
-        ResponseEntity<JSONObject> entity1=new ResponseEntity<JSONObject>(jo,HttpStatus.OK);
+        PaginationDto list = paginationArray(items, currentPage);
+        ResponseEntity<JSONObject> entity1 = new ResponseEntity<JSONObject>(jo, HttpStatus.OK);
         return list;
     }
 
     private PaginationDto paginationArray(JSONArray jsonArray, String currentPage) throws JSONException {
         ArrayList<String> list = new ArrayList<>();
-            int x=Integer.parseInt(this.pageSize)*(Integer.parseInt(currentPage)-1);
-            int y=x+Integer.parseInt(pageSize);
+        int x = Integer.parseInt(this.pageSize) * (Integer.parseInt(currentPage) - 1);
+        int y = x + Integer.parseInt(pageSize);
         String total = String.valueOf(jsonArray.size());
-        while (x<y && x<=jsonArray.size()-1){
+        while (x < y && x <= jsonArray.size() - 1) {
             JSONObject jsonObject = (JSONObject) jsonArray.get(x);
             String jo = (String) jsonObject.get("name");
             list.add(jo);
             x++;
         }
-        PaginationDto paginationDto=new PaginationDto(Integer.parseInt(pageSize),Integer.parseInt(total),list);
+        PaginationDto paginationDto = new PaginationDto(Integer.parseInt(pageSize), Integer.parseInt(total), list);
         return paginationDto;
     }
 
-    public void addFile(HttpServletRequest request, String form, String date, String color, String place, String name, MultipartFile file) throws IOException, ServletException {
-        String stringName = color + "_" + form + "_" + place + "_" + name + "_" + date;
+    public void addFile(HttpServletRequest request, String form, String color, String name, MultipartFile file) throws IOException, ServletException {
+        String stringName = color + "_" + form + "_" + name + ".jpg";
         String url = "https://cloud-api.yandex.net/v1/disk/resources/upload?path=/sugarBase1/" + stringName;
         CloseableHttpClient client = HttpClients.createDefault();
         HttpGet httpGet = new HttpGet(url);
@@ -136,6 +144,7 @@ public class SugarServise implements Serializable {
 
     public HttpEntity createFolder(String folgerName) throws IOException {
         String url = "https://cloud-api.yandex.net/v1/disk/resources?path=" + URLEncoder.encode(folgerName, StandardCharsets.UTF_8);
+        System.out.println(url);
         CloseableHttpClient client = HttpClients.createDefault();
         HttpPut httpPut = new HttpPut(url);
         httpPut.setHeader("Content-type", "application/json");
@@ -160,19 +169,48 @@ public class SugarServise implements Serializable {
         }
     }
 
-    public HttpResponse deleteFileByName(String name) throws IOException {
+    public org.springframework.http.HttpEntity<Boolean> deleteFileByName(String name) throws IOException {
         String UrlDelete = "https://cloud-api.yandex.net/v1/disk/resources?path=/sugarBase1/" + name;
         CloseableHttpClient client = HttpClients.createDefault();
         HttpDelete httpDelete = new HttpDelete(UrlDelete);
         httpDelete.setHeader("Content-type", "application/json");
         httpDelete.setHeader("Authorization", "OAuth AgAAAABQSs54AAbbEDrOVKJqbkL2vV5Ji4xJRCA");
         CloseableHttpResponse response = client.execute(httpDelete);
-        System.out.println(response);
-        return response;
+        String s = response.getStatusLine().toString();
+        if (s.equals("HTTP/1.1 204 NO CONTENT")) {
+            String substring = name.substring(0, name.length() - 4);
+            String[] split = substring.split("_");
+            sugarRepository.deleteSugarByColorAndFormAndName(split[0],split[1],split[2]);
+            Boolean stringHttpEntity = deleteFileByNameFromDir(name);
+            return new org.springframework.http.HttpEntity<Boolean>(stringHttpEntity);
+        }
+        return null;
+    }
+
+    private Boolean deleteFileByNameFromDir(String name) {
+        File file=new File(sugarServiceDb.fileStorage,name);
+        if (file.exists()){
+            boolean delete = file.delete();
+            return true;
+        }else {
+            System.out.println("Ошибка удаления файла");
+        }
+        return null;
     }
 
     public void setPageSize(int num) {
-        this.pageSize=String.valueOf(num);
+        this.pageSize = String.valueOf(num);
+    }
 
+    public HttpEntity getListDir() throws IOException {
+        String url = "https://cloud-api.yandex.net/v1/disk/applications/";
+        CloseableHttpClient client = HttpClients.createDefault();
+        HttpGet httpGet = new HttpGet(url);
+        httpGet.setHeader("Content-type", "application/json");
+        httpGet.setHeader("Authorization", "OAuth AgAAAABQSs54AAbbEDrOVKJqbkL2vV5Ji4xJRCA");
+        CloseableHttpResponse response = client.execute(httpGet);
+        HttpEntity entity = response.getEntity();
+        String s = EntityUtils.toString(response.getEntity());
+        return null;
     }
 }
