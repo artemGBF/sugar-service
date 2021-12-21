@@ -1,23 +1,28 @@
 package ru.gbf.sugar.sugar.entity;
 
 import lombok.*;
-import org.springframework.data.relational.core.mapping.Table;
 
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
 import java.io.Serializable;
 
-@Table("sugars")
-@AllArgsConstructor
-@NoArgsConstructor
+
 @Setter
 @Getter
-@ToString
-@EqualsAndHashCode
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "sugars")
 public class Sugar implements Serializable {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String name;
     private String color;
     private String url1;
+    private byte[] img1;
     private String url2;
-    private Boolean synchronizationFlag;
-    private String description;
+    private byte[] img2;
+    private boolean synchronizationFlag;
 }

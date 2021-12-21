@@ -4,7 +4,8 @@ CREATE TABLE sugars
     name                text,
     color               text,
     url1                text,
+    img1                bytea,
     url2                text,
-    synchronizationFlag bool,
-    description         text
+    img2                bytea,
+    synchronizationFlag bool
 );
