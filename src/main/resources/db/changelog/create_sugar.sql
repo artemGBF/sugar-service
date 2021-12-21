@@ -7,5 +7,5 @@ CREATE TABLE sugars
     img1                bytea,
     url2                text,
     img2                bytea,
-    synchronizationFlag bool
+    sync                boolean
 );

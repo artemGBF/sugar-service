@@ -2,6 +2,7 @@ package ru.gbf.sugar.sugar.entity;
 
 import lombok.*;
 
+import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -13,6 +14,8 @@ import java.io.Serializable;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
+@Entity
 @Table(name = "sugars")
 public class Sugar implements Serializable {
     @Id
@@ -24,5 +27,5 @@ public class Sugar implements Serializable {
     private byte[] img1;
     private String url2;
     private byte[] img2;
-    private boolean synchronizationFlag;
+    private boolean sync;
 }

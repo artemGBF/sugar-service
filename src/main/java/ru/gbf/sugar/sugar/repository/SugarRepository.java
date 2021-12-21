@@ -9,9 +9,9 @@ import ru.gbf.sugar.sugar.entity.Sugar;
 import java.util.List;
 
 public interface SugarRepository extends PagingAndSortingRepository<Sugar, Long> {
-    List<Sugar> findAllByName(String name, Pageable pageable, Sort sort);
+    List<Sugar> findAllByName(String name, Pageable pageable);
 
-    List<Sugar> findAllByColor(String color, Pageable pageable, Sort sort);
+    List<Sugar> findAllByColor(String color, Pageable pageable);
 
-    List<Sugar> findAllByNameAndColor(String name, String color, Pageable pageable, Sort sort);
+    List<Sugar> findAllByNameAndColor(String name, String color, Pageable pageable);
 }
