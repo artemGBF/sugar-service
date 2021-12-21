@@ -6,6 +6,8 @@ target/
 .mvn
 mvnw
 mvnw.cmd
+fileToSearch.txt
+imgs
 
 ### STS ###
 .apt_generated
