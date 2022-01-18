@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class SugarService {
     private final SugarRepository sugarRepository;
-    private final SugarMapper sugarMapper;
 
     public Sugar create(Sugar sugar, String filename) throws IOException {
         FileInputStream fileInputStream = new FileInputStream(filename);
@@ -33,14 +32,7 @@ public class SugarService {
         sugar.setImg1(bytes);
         sugar.setSync(false);
 
-        Sugar save = save(sugar);
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(save.getImg1());
-        BufferedImage bImage2 = ImageIO.read(bis);
-        ImageIO.write(bImage2, "jpg", new File("output.jpg"));
-        System.out.println("image created");
-
-        return save;
+        return save(sugar);
     }
 
     public Sugar save(Sugar sugar) {
