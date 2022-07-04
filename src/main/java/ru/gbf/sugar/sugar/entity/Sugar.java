@@ -3,6 +3,8 @@ package ru.gbf.sugar.sugar.entity;
 import lombok.*;
 
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -23,9 +25,10 @@ public class Sugar implements Serializable {
     private Long id;
     private String name;
     private String color;
-    private String url1;
+    @Enumerated(EnumType.STRING)
+    private SugarForm form;
     private byte[] img1;
-    private String url2;
     private byte[] img2;
-    private boolean sync;
+    private Boolean sync;
+    private Boolean active;
 }
